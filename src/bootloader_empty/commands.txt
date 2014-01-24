@@ -1,0 +1,2 @@
+command to create the 'boot' file:
+echo "1fe: 55 aa" | xxd -r > boot
