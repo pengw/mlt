@@ -1,0 +1,421 @@
+<html>
+
+<head>
+
+	<style>
+
+		#mainBoard div {
+
+			width: 21px;
+
+			height: 21px;
+
+			float: left;
+
+			border: 1px solid lightgrey;
+
+			display: inline-block;
+
+		}
+
+	</style>
+
+	<script>
+
+		window.onload = function() {
+
+			var dimension = 11;
+
+			var blocks = dimension * dimension;
+
+			
+
+			var mainBoard = document.getElementById('mainBoard');
+
+			
+
+			//build table
+
+			for (var i = 0; i < blocks; ++i) {
+
+				var div = document.createElement('div');
+
+				if (i % dimension === 0) {
+
+					div.style.clear = 'left';
+
+				}
+
+				mainBoard.appendChild(div);
+
+			}
+
+			
+
+			//initial position
+
+			var snake = [0, 1];
+
+			
+
+			//draw snake
+
+			for (var i = 0; i < snake.length; ++i) {
+
+				var snakeItem = snake[i];
+
+				mainBoard.childNodes[snakeItem].style.backgroundColor = 'blue';
+
+			}
+
+			
+
+			//event listener
+
+			var directions = {
+
+				'Up': -dimension,
+
+				'Right': 1,
+
+				'Down': dimension,
+
+				'Left': -1
+
+			};
+
+			var directionOpposites = {
+
+				'Up': 'Down',
+
+				'Right': 'Left',
+
+				'Down': 'Up',
+
+				'Left': 'Right'
+
+			};
+
+			
+
+			function getCurrentDirection() {
+
+				return snake[snake.length - 1] - snake[snake.length - 2];
+
+			}
+
+			
+
+			function getCurrentDirectionName() {
+
+				var curDirection = getCurrentDirection();
+
+				for (var direction in directions) {
+
+					if (directions[direction] === curDirection) {
+
+						return direction;
+
+					}
+
+				}
+
+			}
+
+			
+
+			function isNextDirectionAvailable(nextDirectionName) {
+
+				//not available direction - according to current direction
+
+				var curDirectionName = getCurrentDirectionName();
+
+				var notAvaiableDirection = directionOpposites[curDirectionName];
+
+				if (notAvaiableDirection === nextDirectionName)
+
+					return false;
+
+				else
+
+					return true;
+
+			}
+
+			
+
+			function isWallHit(nextDirectionName) {
+
+				//not avaiable direction - hit the wall
+
+				var nextStep = snake[snake.length - 1] + directions[nextDirectionName];
+
+				if (nextDirectionName === 'Up' || nextDirectionName === 'Down') {
+
+					if (nextStep > blocks || nextStep < 0) {
+
+						return true;
+
+					}
+
+				} else if (nextDirectionName === 'Left' || nextDirectionName === 'Right') {
+
+					if (Math.floor(nextStep / dimension) !== Math.floor(snake[snake.length - 1] / dimension)) {
+
+						return true;
+
+					}
+
+				}
+
+				return false;
+
+			}
+
+			
+
+			function isSelfHit(nextDirectionName) {
+
+				var nextStep = getNextStep(nextDirectionName);
+
+				if (snake.indexOf(nextStep) !== -1)
+
+					return true;
+
+				else
+
+					return false;
+
+			}
+
+			
+
+			function getNextStep(nextDirectionName) {
+
+				return snake[snake.length - 1] + directions[nextDirectionName];
+
+			}
+
+			
+
+			function move(nextDirectionName) {			
+
+				if (!isNextDirectionAvailable(nextDirectionName))
+
+					return;
+
+					
+
+				clearTimeout(tick);
+
+				
+
+				if (isWallHit(nextDirectionName)) {
+
+					alert('hit the wall - Game Over');
+
+					window.location.reload();
+
+					return;
+
+				}
+
+				
+
+				//not avaiable direction - hit self
+
+				if (isSelfHit(nextDirectionName)) {
+
+					alert('hit yourself - Game Over');
+
+					window.location.reload();
+
+					return;
+
+				}
+
+				
+
+				//eat the diamond
+
+				var nextStep = getNextStep(nextDirectionName);
+
+				snake.push(nextStep);
+
+				mainBoard.childNodes[snake[snake.length - 1]].style.backgroundColor = 'blue';
+
+				if (nextStep === diamond) {
+
+					createDiamond();
+
+				} else {
+
+					//move tail
+
+					mainBoard.childNodes[snake[0]].style.backgroundColor = '';
+
+					snake.splice(0, 1);
+
+				}
+
+				
+
+				tick = setTimeout(tickMove, 1000);
+
+			}
+
+			
+
+			var tick = null;
+
+			
+
+			function tickMove() {
+
+				//move
+
+				var curDirectionName = getCurrentDirectionName();
+
+				move(curDirectionName);
+
+			}
+
+			
+
+			document.body.addEventListener('keyup', function(e){
+
+				var nextDirctionName = e.keyIdentifier || e.key;
+
+				
+
+				if (nextDirctionName === 'Enter') {
+
+					autoTick = setTimeout(auto, 0);
+
+				}				
+
+				
+
+				var direction = directions[nextDirctionName];
+
+				if (direction) {
+
+					move(nextDirctionName);
+
+				}
+
+			});
+
+			
+
+			function createDiamond() {
+
+				do {
+
+					diamond = Math.floor(Math.random() * blocks);
+
+				} while (snake.indexOf(diamond) !== -1);
+
+				mainBoard.childNodes[diamond].style.backgroundColor = 'pink';
+
+			}
+
+			
+
+			var diamond;
+
+			createDiamond();
+
+			
+
+			var autoTick;
+
+			
+
+			function isNextDirectionAvailableAndSafe(nextDirectionName) {
+
+				if (isNextDirectionAvailable(nextDirectionName) && !isWallHit(nextDirectionName) && !isSelfHit(nextDirectionName))
+
+					return true;
+
+				else
+
+					return false;
+
+			}
+
+			
+
+			function auto() {
+
+				clearTimeout(autoTick);
+
+				
+
+				var availableDirections = [];
+
+				
+
+				for (var direction in directions) {
+
+					if (isNextDirectionAvailableAndSafe(direction)) {
+
+						availableDirections.push(direction);
+
+					}
+
+				}
+
+				
+
+				if (availableDirections.length) {
+
+					var greedy = blocks;
+
+					var nextDirectionName;
+
+					
+
+					for (var i = 0; i < availableDirections.length; ++i) {
+
+						var nextDirection = availableDirections[i];
+
+						var nextStep = getNextStep(nextDirection);
+
+						var distence = Math.abs(Math.floor(nextStep / dimension) - Math.floor(diamond / dimension)) + Math.abs(Math.floor(nextStep % dimension) - Math.floor(diamond % dimension)) - 1;
+
+						if (distence < greedy) {
+
+							greedy = distence;
+
+							nextDirectionName = nextDirection;
+
+						}
+
+					}
+
+					
+
+					move(nextDirectionName);
+
+				}
+
+				
+
+				autoTick = setTimeout(auto, 100);
+
+			}
+
+		}
+
+	</script>
+
+</head>
+
+<body>
+
+	<div id="mainBoard"></div>
+
+</body>
+
+</html>
